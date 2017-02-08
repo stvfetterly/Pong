@@ -1,8 +1,9 @@
 #include "stdafx.h"
 #include "GameBall.h"
 #include "Game.h"
+#include "ServiceLocator.h"
 
-GameBall::GameBall() : _velocity(230.0), _elapsedTimeSinceStart(0.0)
+GameBall::GameBall() : _velocity(230.0)
 {
 	//Load default image
 	Load("images/ball.png");
@@ -24,14 +25,6 @@ GameBall::~GameBall()
 
 void GameBall::Update(const float& elapsedTime)
 {
-	_elapsedTimeSinceStart += elapsedTime;
-
-	//Delay game from starting until three seconds have passed so that the user has time to react
-	if (_elapsedTimeSinceStart < 3.0)
-	{
-		return;
-	}
-
 	//figure how much in x and y we should move
 	float moveAmount = _velocity * elapsedTime;
 	float moveByX = LinearVelocityX(_angle) * moveAmount;
@@ -90,6 +83,9 @@ void GameBall::Update(const float& elapsedTime)
 
 		//increase speed of the ball
 		_velocity += 5.0f;
+
+		//Play associated sound
+		ServiceLocator::GetAudio()->PlaySound("sounds/Bounce.wav");
 	}
 	
 	
@@ -106,6 +102,7 @@ void GameBall::Update(const float& elapsedTime)
 		if (p1Paddle.intersects( GetBoundingRect() ))
 		{
 			//Riccochet off the paddle
+
 			_angle = Game::MAX_DEGREES - _angle;
 
 			moveByY = -moveByY;
@@ -136,6 +133,9 @@ void GameBall::Update(const float& elapsedTime)
 
 			//increase speed of the ball
 			_velocity += 5.0f;
+
+			//Play associated sound
+			ServiceLocator::GetAudio()->PlaySound("sounds/BounceHard.wav");
 		}
 	}
 		
@@ -149,6 +149,9 @@ void GameBall::Update(const float& elapsedTime)
 
 		//increase speed of the ball
 		_velocity += 5.0f;
+
+		//Play associated sound
+		ServiceLocator::GetAudio()->PlaySound("sounds/Bounce.wav");
 	}
 
 
@@ -161,7 +164,9 @@ void GameBall::Update(const float& elapsedTime)
 		srand(static_cast<unsigned int>(time(NULL)));
 		_angle = static_cast<float>(rand() % Game::MAX_DEGREES);		//Generate a random number from 0 - 359 degrees for ball angle
 		_velocity = 220.0;
-		_elapsedTimeSinceStart = 0.0;
+
+		//Play associated sound
+		ServiceLocator::GetAudio()->PlaySound("sounds/CheerBig.wav");
 	}
 
 	GetSprite().move(moveByX, moveByY);

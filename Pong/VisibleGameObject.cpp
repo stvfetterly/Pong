@@ -3,7 +3,7 @@
 
 
 //Default constructor - initialize variables
-VisibleGameObject::VisibleGameObject(): _isLoaded(false), _filename("")
+VisibleGameObject::VisibleGameObject() : _isLoaded(false), _filename(""), _isPaused(true)
 {
 
 }

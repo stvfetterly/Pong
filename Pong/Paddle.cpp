@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Paddle.h"
 #include "Game.h"
+#include "ServiceLocator.h"
 
 Paddle::Paddle(): _velocity(0), _maxVelocity(600.0)
 {
@@ -72,12 +73,18 @@ void Paddle::Update(const float& elapsedTime)
 	{
 		this->SetPosition(leftBound, pos.y);
 		_velocity = -_velocity;
+
+		//Play associated sound
+		ServiceLocator::GetAudio()->PlaySound("sounds/Bounce2.wav");
 	}
 	//Paddle will bounce off the right side wall too
 	else if (pos.x > rightBound)
 	{
 		this->SetPosition(rightBound, pos.y);
 		_velocity = -_velocity;
+
+		//Play associated sound
+		ServiceLocator::GetAudio()->PlaySound("sounds/Bounce2.wav");
 	}
 	else
 	{

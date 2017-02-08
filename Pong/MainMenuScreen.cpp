@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "MainMenuScreen.h"
+#include "ServiceLocator.h"
 
 //Show the main menu image, set up the clickable coordinates for option selection
 MainMenu::MenuResult MainMenu::Show(sf::RenderWindow& window)
@@ -51,6 +52,9 @@ MainMenu::MenuResult MainMenu::HandleClick(int x, int y)
 			&& menuItemRect.left < x		//left
 			&& menuItemRect.width > x)		//right
 		{
+			//Play selection sound
+			ServiceLocator::GetAudio()->PlaySound("sounds/Click.wav");
+
 			return (*it).action;
 		}
 	}

@@ -19,8 +19,12 @@ public:
 	virtual sf::Rect<float> GetBoundingRect() const;
 	virtual sf::Vector2f GetPosition() const;
 
+	virtual bool IsPaused() const { return _isPaused; }
+	virtual void Pause(bool newVal) { _isPaused = newVal; }
+
 protected:
 	sf::Sprite& GetSprite();
+	bool _isPaused;
 
 private:
 	sf::Sprite _sprite;

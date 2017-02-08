@@ -2,7 +2,7 @@
 #include "GameObjectManager.h"
 #include "Game.h"
 
-GameObjectManager::GameObjectManager()
+GameObjectManager::GameObjectManager() : _paused(false)
 {
 }
 GameObjectManager::~GameObjectManager()
@@ -68,6 +68,25 @@ void GameObjectManager::UpdateAll()
 
 	for (auto itr = _gameObjects.begin(); itr != _gameObjects.end(); ++itr)
 	{
-		itr->second->Update(timeDelta);
+		//Only update items if they aren't paused
+		if (itr->second->IsPaused() == false)
+		{
+			itr->second->Update(timeDelta);
+		}
+	}
+}
+
+void GameObjectManager::SetPause(bool pause)
+{
+	if (_paused != pause)
+	{
+		//Pause/Unpause everything!
+		for (auto itr = _gameObjects.begin(); itr != _gameObjects.end(); ++itr)
+		{
+			itr->second->Pause(pause);
+		}
+
+		//record that we've paused the game so we don't need to loop through everything again
+		_paused = pause;
 	}
 }

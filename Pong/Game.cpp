@@ -2,6 +2,8 @@
 #include "Game.h"
 #include "MainMenuScreen.h"
 #include "SplashScreen.h"
+#include "SFMLSoundProvider.h"
+#include "ServiceLocator.h"
 
 //Initialize static variables
 Game::GameState Game::_gameState = Uninitialized;
@@ -14,6 +16,10 @@ void Game::Start(void)
 	if (_gameState != Uninitialized)
 		//TODO: error handling for this state - should always start as uninitialized
 		return;
+
+	//Create the sound service and save it in the register
+	SFMLSoundProvider soundProvider;
+	ServiceLocator::RegisterServiceLocator(&soundProvider);
 
 	//Creates main window with 1024x768 resolution, 32 bit colour, and a title of Pong!
 	_mainWindow.create(sf::VideoMode(1024, 768, 32), "Pong!");
@@ -30,6 +36,10 @@ void Game::Start(void)
 	GameBall* ball = new GameBall();
 	ball->SetPosition((SCREEN_WIDTH / 2), (SCREEN_HEIGHT / 2) - 15);
 	_gameObjectManager.Add("Ball", ball);
+
+
+	//Pause all game objects so they don't start moving while at the splash screen
+	_gameObjectManager.SetPause(true);
 
 	_gameState = Game::ShowingSplash;
 
@@ -57,12 +67,14 @@ void Game::GameLoop()
 	sf::Event currentEvent;
 	_mainWindow.pollEvent(currentEvent);  //Check if an event has occurred
 
+	//Ensure that the game music is always playing
+	ServiceLocator::GetAudio()->PlayMusic();
+
 	//Determine what actions should take place based on state of game
 	switch (_gameState)
 	{
 		//User is playing the game
 		case Game::Playing:
-
 			//Clears screen to black
 			_mainWindow.clear(sf::Color(0, 0, 0));
 
@@ -90,18 +102,28 @@ void Game::GameLoop()
 					_gameState = Game::ShowingMenu;
 				}
 			}
+
+			//If the user presses space, pause the game
+			if (currentEvent.type == sf::Event::KeyPressed)
+			{
+ 				if (currentEvent.key.code == sf::Keyboard::Space)
+				{
+					_gameObjectManager.SetPause(!_gameObjectManager.GetPause());
+				}
+			}
 			break;
 
 		//show the main menu
 		case Game::ShowingMenu:
+			_gameObjectManager.SetPause(true);
 			ShowMenu();
 			break;
 		//Show the splash screen
 		case Game::ShowingSplash:
+			_gameObjectManager.SetPause(true);
 			ShowSplashScreen();
 			break;
 	}
-	
 }
 
 void Game::ShowSplashScreen()
@@ -123,6 +145,9 @@ void Game::ShowMenu()
 		break;
 	case MainMenu::Play:
 		_gameState = Game::Playing;
+
+		//Start all the objects moving!
+		_gameObjectManager.SetPause(false);
 		break;
 	}
 }

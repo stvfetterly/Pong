@@ -14,10 +14,14 @@ public:
 	
 	void DrawAll(sf::RenderWindow& renderWindow);
 	void UpdateAll();
+	void SetPause(bool pause);
+	bool GetPause() { return _paused; }
 
 private:
 	std::map<std::string, VisibleGameObject*> _gameObjects;
 	sf::Clock clock;
+
+	bool _paused;
 
 	struct GameObjectDeallocator
 	{

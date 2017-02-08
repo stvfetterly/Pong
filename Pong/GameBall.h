@@ -10,7 +10,6 @@ public:
 	void Update(const float& elapsedTime);
 
 private:
-	float _elapsedTimeSinceStart;
 	float _angle;
 	float _velocity;
 
