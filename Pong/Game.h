@@ -1,7 +1,5 @@
 #pragma once
 #include "stdafx.h"
-#include "Paddle.h"
-#include "GameBall.h"
 #include "GameObjectManager.h"
 
 class Game
@@ -16,6 +14,7 @@ public:
 	const static int SCREEN_WIDTH = 1024;
 	const static int SCREEN_HEIGHT = 768;
 	const static int MAX_DEGREES = 360;
+	const static int NUM_PADDLES = 2;
 
 private:
 	static bool IsExiting();

@@ -4,6 +4,9 @@
 #include "SplashScreen.h"
 #include "SFMLSoundProvider.h"
 #include "ServiceLocator.h"
+#include "Paddle.h"
+#include "GameBall.h"
+#include "Score.h"
 
 //Initialize static variables
 Game::GameState Game::_gameState = Uninitialized;
@@ -24,13 +27,21 @@ void Game::Start(void)
 	//Creates main window with 1024x768 resolution, 32 bit colour, and a title of Pong!
 	_mainWindow.create(sf::VideoMode(1024, 768, 32), "Pong!");
 	
+	//Create score boards
+	Score* score1 = new Score();
+	Score* score2 = new Score();
+	score1->SetPosition((1024 / 2), 740);		//Scores go in the middle of the screen below the paddles
+	score2->SetPosition((1024 / 2), 28);
+	_gameObjectManager.Add("Score1", score1);
+	_gameObjectManager.Add("Score2", score2);
+
 	//Creates paddles
-	Paddle* player1 = new Paddle();
-	//Paddle* player2 = new Paddle();
-	player1->SetPosition((1024 / 2) - 45, 700);		//Paddle1 in the middle, bottom
-	//player2->SetPosition((1024 / 2) - 45, 68);		//Paddle2 in the middle, top
+	Paddle* player1 = new Paddle(Paddle::Manual);		//player 1 is the lower paddle
+	Paddle* player2 = new Paddle(Paddle::Auto);			//player 2 is the upper paddle
+	player1->SetPosition((1024 / 2), 700);				//Paddle1 in the middle, bottom
+	player2->SetPosition((1024 / 2), 68);				//Paddle2 in the middle, top
 	_gameObjectManager.Add("Paddle1", player1);
-	//_gameObjectManager.Add("Paddle2", player2);
+	_gameObjectManager.Add("Paddle2", player2);
 	
 	//Create the ball
 	GameBall* ball = new GameBall();

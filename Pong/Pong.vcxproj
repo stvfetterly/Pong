@@ -150,6 +150,7 @@
     <ClInclude Include="IAudioProvider.h" />
     <ClInclude Include="MainMenuScreen.h" />
     <ClInclude Include="Paddle.h" />
+    <ClInclude Include="Score.h" />
     <ClInclude Include="ServiceLocator.h" />
     <ClInclude Include="SFMLSoundProvider.h" />
     <ClInclude Include="SoundFileCache.h" />
@@ -165,6 +166,7 @@
     <ClCompile Include="MainMenuScreen.cpp" />
     <ClCompile Include="Paddle.cpp" />
     <ClCompile Include="Pong.cpp" />
+    <ClCompile Include="Score.cpp" />
     <ClCompile Include="ServiceLocator.cpp" />
     <ClCompile Include="SFMLSoundProvider.cpp" />
     <ClCompile Include="SoundFileCache.cpp" />

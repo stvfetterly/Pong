@@ -12,6 +12,8 @@ public:
 	sf::Music* GetSong(const std::string&) const;
 
 private:
+	void AddSound(const std::string& soundName) const;
+
 	static std::map<std::string, sf::SoundBuffer*> _sounds;
 	static std::map<std::string, sf::Music*> _music;
 

@@ -4,7 +4,9 @@
 class Paddle : public VisibleGameObject
 {
 public:
-	Paddle();
+	enum PaddleType { Manual, Auto };
+	
+	Paddle(PaddleType type);
 	~Paddle();
 
 	void Update(const float& elapsedTime);
@@ -15,4 +17,8 @@ public:
 private:
 	float _velocity;      //positive = right, negative = left
 	float _maxVelocity;
+	PaddleType _type;
+
+	void UpdateManual(const float& elapsedTime);
+	void UpdateAuto(const float& elapsedTime);
 };

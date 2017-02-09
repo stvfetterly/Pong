@@ -2,6 +2,8 @@
 #include "GameBall.h"
 #include "Game.h"
 #include "ServiceLocator.h"
+#include "Paddle.h"
+#include "Score.h"
 
 GameBall::GameBall() : _velocity(230.0)
 {
@@ -57,7 +59,6 @@ void GameBall::Update(const float& elapsedTime)
 		{
 			_angle -= Game::MAX_DEGREES;
 		}
-
 		
 		//prevent the ball from entering situations where it bounces back and forth endlessly left to right
 		if (_angle > 170.0 && _angle < 180.0)		//Shallow left bounce
@@ -77,7 +78,6 @@ void GameBall::Update(const float& elapsedTime)
 			_angle += 20.0;
 		}
 
-
 		//if we were going left, go right or vise-versa
 		moveByX = -moveByX;
 
@@ -89,76 +89,105 @@ void GameBall::Update(const float& elapsedTime)
 	}
 	
 	
-	//COLLISION WITH PADDLE
-	Paddle* player1 = dynamic_cast<Paddle*>(Game::GetGameObjectManager().Get("Paddle1"));
-	if (player1 != NULL)
+	//COLLISION WITH LOWER PADDLE
+
+	//Get the two paddles
+	Paddle* paddle[Game::NUM_PADDLES];
+
+	paddle[0] = dynamic_cast<Paddle*>(Game::GetGameObjectManager().Get("Paddle1"));
+	paddle[1] = dynamic_cast<Paddle*>(Game::GetGameObjectManager().Get("Paddle2"));
+
+	//Execute collision code for each paddle
+	for (int i = 0; i < Game::NUM_PADDLES; i++)
 	{
-		sf::Rect<float> p1Paddle = player1->GetBoundingRect();
-		sf::Rect<float> ballRect = GetBoundingRect();
-
-		//if (ballRect.)
-
-		//Check if a collision has happened between the ball and paddle
-		if (p1Paddle.intersects( GetBoundingRect() ))
+		if (paddle[i] != NULL)
 		{
-			//Riccochet off the paddle
+			sf::Rect<float> p1Paddle = paddle[i]->GetBoundingRect();
+			sf::Rect<float> ballRect = GetBoundingRect();
 
-			_angle = Game::MAX_DEGREES - _angle;
-
-			moveByY = -moveByY;
-			
-			// If the ball is inside paddle, move it to the top
-			SetPosition(GetPosition().x, player1->GetBoundingRect().top - (GetHeight() / 2)	);
-
-			// Now add "English" based on the players velocity.  
-			float playerVelocity = player1->GetVelocity();
-
-			if (playerVelocity < 0)			// moving left
+			//Check if a collision has happened between the ball and paddle
+			if (p1Paddle.intersects(GetBoundingRect()))
 			{
-				
-				_angle -= 20.0f;
-				if (_angle < 0)
-				{
-					_angle = Game::MAX_DEGREES - _angle;
-				}
-			}
-			else if (playerVelocity > 0)	// moving right
-			{
-				_angle += 20.0f;
-				if (_angle > Game::MAX_DEGREES)
-				{
-					_angle = _angle - Game::MAX_DEGREES;
-				}
-			}
+				//Riccochet off the paddle
+				_angle = Game::MAX_DEGREES - _angle;
 
-			//increase speed of the ball
-			_velocity += 5.0f;
+				moveByY = -moveByY;
 
-			//Play associated sound
-			ServiceLocator::GetAudio()->PlaySound("sounds/BounceHard.wav");
+				// Since ball is inside paddle, force it to the nearest top or bottom boundry
+				if (GetPosition().y < paddle[i]->GetPosition().y)
+				{
+					SetPosition(GetPosition().x, paddle[i]->GetBoundingRect().top - (GetHeight() / 2));
+				}
+				else if (GetPosition().y >= paddle[i]->GetPosition().y)
+				{
+					SetPosition(GetPosition().x, paddle[i]->GetBoundingRect().top + paddle[i]->GetWidth() + (GetHeight() / 2));
+				}
+
+				// Now add "English" based on the players velocity.  
+				float playerVelocity = paddle[i]->GetVelocity();
+
+				if (playerVelocity < 0)			// moving left
+				{
+					_angle -= 20.0f;
+					if (_angle < 0)
+					{
+						_angle = Game::MAX_DEGREES - _angle;
+					}
+				}
+				else if (playerVelocity > 0)	// moving right
+				{
+					_angle += 20.0f;
+					if (_angle > Game::MAX_DEGREES)
+					{
+						_angle = _angle - Game::MAX_DEGREES;
+					}
+				}
+
+				//increase speed of the ball
+				_velocity += 5.0f;
+
+				//Play associated sound
+				ServiceLocator::GetAudio()->PlaySound("sounds/BounceHard.wav");
+			}
 		}
 	}
-		
+	
 
-
-	//COLLISION WITH TOP
-	if (GetPosition().y - GetHeight() / 2 <= 0)
+	//BALL FALLS OUT TOP OR BOTTOM OF SCREEN
+	if ( (GetPosition().y + GetHeight() / 2 + moveByY >= Game::SCREEN_HEIGHT ) ||	//Falling out bottom
+		 (GetPosition().y + GetHeight() / 2 + moveByY < 0.0)				 )		//Falling out top
 	{
-		_angle = Game::MAX_DEGREES - _angle;
-		moveByY = -moveByY;
+		//Record if the ball has gone out the top or the bottom
+		bool b_outTop = (GetPosition().y + GetHeight() / 2 + moveByY < 0.0);
 
-		//increase speed of the ball
-		_velocity += 5.0f;
+		//UPDATE SCORE FOR EACH PADDLE
+		Score* score[Score::MAX_SCORE];
 
-		//Play associated sound
-		ServiceLocator::GetAudio()->PlaySound("sounds/Bounce.wav");
-	}
+		score[0] = dynamic_cast<Score*>(Game::GetGameObjectManager().Get("Score1"));
+		score[1] = dynamic_cast<Score*>(Game::GetGameObjectManager().Get("Score2"));
 
+		for (int i = 0; i < Score::MAX_SCORE; i++)
+		{
+			if ( (!b_outTop && i == 1)  ||	//If we've gone out the bottom, update score 2
+				 ( b_outTop && i == 0)  )	//if we've gone out the top, update score 1
+			{
+				//If we're already at the max number of points, reset both scores
+				if (score[i]->GetScore() == Score::MAX_SCORE)
+				{
+					//reset both scores
+					score[0]->SetScore(0);
+					score[1]->SetScore(0);
+					ServiceLocator::GetAudio()->PlaySound("sounds/CheerBig3.wav");
+				}
+				else
+				{
+					//Increment score
+					score[i]->SetScore(score[i]->GetScore() + 1);
+				}
+			}
+		}
 
-	//BALL FALLS OUT BOTTOM OF SCREEN
-	if (GetPosition().y + GetHeight() / 2 + moveByY >= Game::SCREEN_HEIGHT)
-	{
-		// move to middle of the screen for now and randomize angle
+		// move to middle of the screen and randomize angle
 		GetSprite().setPosition(Game::SCREEN_WIDTH / 2, Game::SCREEN_HEIGHT / 2);
 			
 		srand(static_cast<unsigned int>(time(NULL)));
@@ -166,7 +195,14 @@ void GameBall::Update(const float& elapsedTime)
 		_velocity = 220.0;
 
 		//Play associated sound
-		ServiceLocator::GetAudio()->PlaySound("sounds/CheerBig.wav");
+		if (b_outTop)
+		{
+			ServiceLocator::GetAudio()->PlaySound("sounds/CheerBig.wav");		//Top Sound
+		}
+		else
+		{
+			ServiceLocator::GetAudio()->PlaySound("sounds/CheerBig2.wav");		//Bottom Sound
+		}
 	}
 
 	GetSprite().move(moveByX, moveByY);

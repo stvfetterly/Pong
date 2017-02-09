@@ -4,7 +4,19 @@
 std::map<std::string, sf::SoundBuffer*> SoundFileCache::_sounds;
 std::map<std::string, sf::Music*> SoundFileCache::_music;
 
-SoundFileCache::SoundFileCache(void) {}
+SoundFileCache::SoundFileCache(void)
+{
+	//Load commonly used sounds into cache upon creation to avoid delays during gameplay
+	AddSound("sounds/Bounce.wav");
+	AddSound("sounds/Bounce2.wav");
+	AddSound("sounds/BounceHard.wav");
+	AddSound("sounds/CheerBig.wav");
+	AddSound("sounds/CheerBig2.wav");
+	AddSound("sounds/CheerBig3.wav");
+	AddSound("sounds/CheerSmall.wav");
+	AddSound("sounds/Click.wav");
+	AddSound("sounds/Inflate.wav");
+}
 
 //Delete all the stuff we've created and saved in the maps
 SoundFileCache::~SoundFileCache(void)
@@ -13,30 +25,43 @@ SoundFileCache::~SoundFileCache(void)
 	std::for_each(_music.begin(), _music.end(), Deallocator<sf::Music*>());
 }
 
+//Adds a new sound to the cache
+void SoundFileCache::AddSound(const std::string& soundName) const
+{
+	sf::SoundBuffer* soundBuffer = new sf::SoundBuffer();
+	if (!soundBuffer->loadFromFile(soundName))
+	{
+		//sound file can't be found, that's a problem
+		delete soundBuffer;
+		throw SoundNotFoundException(soundName + " was not found in call to SoundFileCache::GetSound");
+	}
+
+	//Sound was found, add it to the map
+	std::map<std::string, sf::SoundBuffer*>::iterator res =
+		_sounds.insert(std::pair<std::string, sf::SoundBuffer*>(soundName, soundBuffer)).first;
+
+	sf::Sound sound;
+	sound.setBuffer(*soundBuffer);
+}
+
 sf::Sound SoundFileCache::GetSound(const std::string& soundName) const
 {
 	std::map<std::string, sf::SoundBuffer*>::iterator itr = _sounds.find(soundName);
 
-	//Check if the sound is already in the map.  If it is, we return it.  Otherwise we add it to the map and return it.
+	//Check if the sound is already in the map.  If it is missing we add it to the map and return it.
 	if (itr == _sounds.end())
 	{
-		sf::SoundBuffer* soundBuffer = new sf::SoundBuffer();
-		if (!soundBuffer->loadFromFile(soundName))
-		{
-			//sound file can't be found, that's a problem
-			delete soundBuffer;
-			throw SoundNotFoundException(soundName + " was not found in call to SoundFileCache::GetSound");
-		}
+		AddSound(soundName);
 
-		//Sound was found, add it to the map
-		std::map<std::string, sf::SoundBuffer*>::iterator res =
-			_sounds.insert(std::pair<std::string, sf::SoundBuffer*>(soundName, soundBuffer)).first;
+		//Find the newly added sound
+		itr = _sounds.find(soundName);
 
+		//Return it
 		sf::Sound sound;
-		sound.setBuffer(*soundBuffer);
+		sound.setBuffer(*itr->second);
 		return sound;
 	}
-	else
+	else    //return the sound
 	{
 		sf::Sound sound;
 		sound.setBuffer(*itr->second);
