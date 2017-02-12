@@ -23,6 +23,8 @@ private:
 	static void ShowSplashScreen();
 	static void ShowMenu();
 
+	static void FireLaser();
+
 	enum GameState 
 	{
 		Uninitialized,

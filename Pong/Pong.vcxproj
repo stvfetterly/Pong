@@ -148,6 +148,7 @@
     <ClInclude Include="GameBall.h" />
     <ClInclude Include="GameObjectManager.h" />
     <ClInclude Include="IAudioProvider.h" />
+    <ClInclude Include="Laser.h" />
     <ClInclude Include="MainMenuScreen.h" />
     <ClInclude Include="Paddle.h" />
     <ClInclude Include="Score.h" />
@@ -163,6 +164,7 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameBall.cpp" />
     <ClCompile Include="GameObjectManager.cpp" />
+    <ClCompile Include="Laser.cpp" />
     <ClCompile Include="MainMenuScreen.cpp" />
     <ClCompile Include="Paddle.cpp" />
     <ClCompile Include="Pong.cpp" />

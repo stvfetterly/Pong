@@ -6,6 +6,7 @@
 #include "ServiceLocator.h"
 #include "Paddle.h"
 #include "GameBall.h"
+#include "Laser.h"
 #include "Score.h"
 
 //Initialize static variables
@@ -27,6 +28,26 @@ void Game::Start(void)
 	//Creates main window with 1024x768 resolution, 32 bit colour, and a title of Pong!
 	_mainWindow.create(sf::VideoMode(1024, 768, 32), "Pong!");
 	
+	//Create bank of laser beams hidden off screen
+	Laser* newLaser = new Laser(true, "Laser");
+	Laser* newLaser1 = new Laser(true, "Laser1");
+	Laser* newLaser2 = new Laser(true, "Laser2");
+	Laser* newLaser3 = new Laser(true, "Laser3");
+	Laser* newLaser4 = new Laser(true, "Laser4");
+	Laser* newLaser5 = new Laser(true, "Laser5");
+	newLaser->SetPosition(SCREEN_WIDTH * 2, SCREEN_WIDTH * 2);		//Hide the laser
+	newLaser1->SetPosition(SCREEN_WIDTH * 2, SCREEN_WIDTH * 2);		//Hide the laser
+	newLaser2->SetPosition(SCREEN_WIDTH * 2, SCREEN_WIDTH * 2);		//Hide the laser
+	newLaser3->SetPosition(SCREEN_WIDTH * 2, SCREEN_WIDTH * 2);		//Hide the laser
+	newLaser4->SetPosition(SCREEN_WIDTH * 2, SCREEN_WIDTH * 2);		//Hide the laser
+	newLaser5->SetPosition(SCREEN_WIDTH * 2, SCREEN_WIDTH * 2);		//Hide the laser
+	_gameObjectManager.Add("Laser", newLaser);
+	_gameObjectManager.Add("Laser2", newLaser1);
+	_gameObjectManager.Add("Laser3", newLaser2);
+	_gameObjectManager.Add("Laser4", newLaser3);
+	_gameObjectManager.Add("Laser5", newLaser4);
+	_gameObjectManager.Add("Laser5", newLaser5);
+
 	//Create score boards
 	Score* score1 = new Score();
 	Score* score2 = new Score();
@@ -36,10 +57,10 @@ void Game::Start(void)
 	_gameObjectManager.Add("Score2", score2);
 
 	//Creates paddles
-	Paddle* player1 = new Paddle(Paddle::Manual);		//player 1 is the lower paddle
-	Paddle* player2 = new Paddle(Paddle::Auto);			//player 2 is the upper paddle
-	player1->SetPosition((1024 / 2), 700);				//Paddle1 in the middle, bottom
-	player2->SetPosition((1024 / 2), 68);				//Paddle2 in the middle, top
+	Paddle* player1 = new Paddle(Paddle::Manual);									//player 1 is the lower paddle
+	Paddle* player2 = new Paddle(Paddle::Auto);										//player 2 is the upper paddle
+	player1->SetPosition((1024 / 2), static_cast<const float>(Paddle::LOW_Y_POS));	//Paddle1 in the middle, bottom
+	player2->SetPosition((1024 / 2), static_cast<const float>(Paddle::TOP_Y_POS));	//Paddle2 in the middle, top
 	_gameObjectManager.Add("Paddle1", player1);
 	_gameObjectManager.Add("Paddle2", player2);
 	
@@ -67,9 +88,13 @@ void Game::Start(void)
 bool Game::IsExiting()
 {
 	if (_gameState == Game::Exiting)
+	{
 		return true;
+	}
 	else
+	{
 		return false;
+	}
 }
 
 //This is where everything happens in the game
@@ -114,12 +139,31 @@ void Game::GameLoop()
 				}
 			}
 
-			//If the user presses space, pause the game
+			//If the user presses P or Pause/Break or Enter, pause the game
 			if (currentEvent.type == sf::Event::KeyPressed)
 			{
- 				if (currentEvent.key.code == sf::Keyboard::Space)
+ 				if (currentEvent.key.code == sf::Keyboard::P     ||
+					currentEvent.key.code == sf::Keyboard::Pause ||
+					currentEvent.key.code == sf::Keyboard::Return)
 				{
 					_gameObjectManager.SetPause(!_gameObjectManager.GetPause());
+				}
+			}
+
+			//Space fires the laser for user controlled paddle
+			if (currentEvent.type == sf::Event::KeyPressed)
+			{
+				if (currentEvent.key.code == sf::Keyboard::Space)
+				{
+					Paddle* firingPaddle = dynamic_cast<Paddle*>( _gameObjectManager.Get("Paddle1") );
+					if (firingPaddle != NULL)
+					{
+						firingPaddle->FireLaser();
+					}
+					else
+					{
+						//TODO - Error handling, can't find paddle!
+					}
 				}
 			}
 			break;

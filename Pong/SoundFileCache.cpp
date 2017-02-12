@@ -16,6 +16,8 @@ SoundFileCache::SoundFileCache(void)
 	AddSound("sounds/CheerSmall.wav");
 	AddSound("sounds/Click.wav");
 	AddSound("sounds/Inflate.wav");
+	AddSound("sounds/LaserBlast.wav");
+	AddSound("sounds/Boom.wav");
 }
 
 //Delete all the stuff we've created and saved in the maps

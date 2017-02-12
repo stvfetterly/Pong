@@ -3,8 +3,12 @@
 #include "Game.h"
 #include "ServiceLocator.h"
 #include "GameBall.h"
+#include "Laser.h"
 
-Paddle::Paddle(Paddle::PaddleType type) : _velocity(0), _maxVelocity(600.0), _type(type)
+const float Paddle::AUTO_FIRE_RATE = 0.6;
+
+Paddle::Paddle(Paddle::PaddleType type) : _velocity(0), _maxVelocity(600.0), _type(type), 
+										  _stun(0.0), laserFired(0), _autoFire(AUTO_FIRE_RATE)
 {
 	//Load default image
 	Load("images/paddle.png");
@@ -33,13 +37,29 @@ float Paddle::GetVelocity() const
 
 void Paddle::Update(const float& elapsedTime)
 {
-	if (_type == Paddle::Auto)
+	//If the paddle is stunned, do not move until time has elapsed
+	if (_stun > 0)
 	{
-		UpdateAuto(elapsedTime);
+		_stun -= elapsedTime;
 	}
 	else
 	{
-		UpdateManual(elapsedTime);
+		//Update the location and firing of automatic paddle
+		if (_type == Paddle::Auto)
+		{
+			_autoFire -= elapsedTime;
+			if (_autoFire < 0)
+			{
+				_autoFire = AUTO_FIRE_RATE;
+				FireLaser();
+			}
+
+			UpdateAuto(elapsedTime);
+		}
+		else   //Update location of manual paddle
+		{
+			UpdateManual(elapsedTime);
+		}
 	}
 }
 
@@ -206,4 +226,96 @@ void Paddle::UpdateManual(const float& elapsedTime)
 	}
 */
 
+}
+
+void Paddle::Stun()
+{
+	//prevents paddle movement for a second
+	_stun = 1.0;
+
+	//Plays sound
+	ServiceLocator::GetAudio()->PlaySound("sounds/Boom.wav");
+}
+
+int Paddle::GetLaserToFire()
+{
+	//return the next available laser to be fired
+	int retVal = laserFired;
+
+	//Update the laser fired val
+	laserFired++;
+	if (laserFired == MAX_LASERS)
+	{
+		laserFired = 0;
+	}
+
+	return retVal;
+}
+
+void Paddle::FireLaser()
+{
+	Laser* firingLaser;
+
+	//Find next free laser to shoot
+	if (GetType() == Paddle::Auto)
+	{
+		switch (GetLaserToFire())
+		{
+		case 0:
+			firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser"));
+			break;
+		case 1:
+			firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser1"));
+			break;
+		case 2:
+			firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser2"));
+			break;
+		}
+	}
+	else  //Manual firing laser
+	{
+		switch (GetLaserToFire())
+		{
+		case 0:
+			firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser3"));
+			break;
+		case 1:
+			firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser4"));
+			break;
+		case 2:
+			firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser5"));
+			break;
+		}
+	}
+
+
+	if (firingLaser != NULL)
+	{
+		//Get center of the paddle as x location
+		float xPos = GetPosition().x;
+		float yPos = GetPosition().y;
+
+		//Get either the top or bottom of the paddle as y location
+		if (yPos == Paddle::TOP_Y_POS)
+		{
+			//Get Top
+			yPos = yPos + firingLaser->GetHeight();
+			firingLaser->SetVelocity( abs( firingLaser->GetVelocity() ) );		//laser must go down, so velocity must be negative
+		}
+		else
+		{
+			//Get Bottom
+			yPos = yPos - firingLaser->GetHeight();
+			firingLaser->SetVelocity( -abs( firingLaser->GetVelocity() ) );		//laser must go up, so velocity must be positive
+		}
+
+		firingLaser->SetPosition(xPos, yPos);
+
+		//Laser sound
+		ServiceLocator::GetAudio()->PlaySound("sounds/LaserBlast.wav");
+	}
+	else
+	{
+		//TODO - Error handling, laser not found!
+	}
 }
