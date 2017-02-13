@@ -15,7 +15,10 @@ public:
 	void PlaySong(const std::string& filename, bool looping);
 	void PlayMusic();
 	void StopAllSounds();
-
+	void StopMusic();
+	void MuteSounds(bool newVal);
+	
+	bool IsSoundMuted() { return _muteSounds; }
 	bool IsSoundPlaying();
 	bool IsSongPlaying();
 
@@ -25,4 +28,6 @@ private:
 	SoundFileCache _soundFileCache;
 	sf::Sound _currentSounds[MAX_SOUND_CHANNELS];
 	std::string _currentSongName;
+
+	bool _muteSounds;
 };

@@ -6,7 +6,7 @@ sf::SoundBuffer _soundBuffer;
 sf::Sound _sound;
 sf::Music _music;
 
-SFMLSoundProvider::SFMLSoundProvider()
+SFMLSoundProvider::SFMLSoundProvider():_muteSounds(false)
 {
 	//Default values so that sounds are heard over the music
 	_sound.setVolume(100.0);
@@ -18,32 +18,41 @@ SFMLSoundProvider::~SFMLSoundProvider()
 
 }
 
+void SFMLSoundProvider::MuteSounds(bool newVal)
+{
+	_muteSounds = newVal;
+}
+
 void SFMLSoundProvider::PlaySound(const std::string& filename)
 {
-	int availChannel = -1;
-
-	for (int i = 0; i < MAX_SOUND_CHANNELS; i++)
+	//Don't play sounds if we're muting
+	if (!_muteSounds)
 	{
-		//Find a free channel to play on
-		if (_currentSounds[i].getStatus() != sf::Sound::Playing)
-		{
-			availChannel = i;
-			break;
-		}
-	}
+		int availChannel = -1;
 
-	//if we have an available channel, then play sound
-	if (availChannel != -1)
-	{
-		try
+		for (int i = 0; i < MAX_SOUND_CHANNELS; i++)
 		{
-			_currentSounds[availChannel] = _soundFileCache.GetSound(filename);
-			_currentSounds[availChannel].play();
+			//Find a free channel to play on
+			if (_currentSounds[i].getStatus() != sf::Sound::Playing)
+			{
+				availChannel = i;
+				break;
+			}
 		}
-		catch (SoundNotFoundException&)
+
+		//if we have an available channel, then play sound
+		if (availChannel != -1)
 		{
-			//ERROR, file not found
-			//TODO - ERROR HANDLING
+			try
+			{
+				_currentSounds[availChannel] = _soundFileCache.GetSound(filename);
+				_currentSounds[availChannel].play();
+			}
+			catch (SoundNotFoundException&)
+			{
+				//ERROR, file not found
+				//TODO - ERROR HANDLING
+			}
 		}
 	}
 }
@@ -130,6 +139,11 @@ void SFMLSoundProvider::StopAllSounds()
 		_currentSounds[i].stop();
 	}
 
+	StopMusic();
+}
+
+void SFMLSoundProvider::StopMusic()
+{
 	//Kill music
 	if (_currentSongName != "")
 	{

@@ -13,6 +13,11 @@
 Game::GameState Game::_gameState = Uninitialized;
 sf::RenderWindow Game::_mainWindow;
 GameObjectManager Game::_gameObjectManager;
+bool Game::_gunFire = true;
+bool Game::_music = true;
+Game::GameDifficulty Game::_difficulty = Game::Wannabe;
+bool Game::_constantMotion = true;
+
 
 //Starts the pong game
 void Game::Start(void)
@@ -103,8 +108,19 @@ void Game::GameLoop()
 	sf::Event currentEvent;
 	_mainWindow.pollEvent(currentEvent);  //Check if an event has occurred
 
-	//Ensure that the game music is always playing
-	ServiceLocator::GetAudio()->PlayMusic();
+	if (_music)
+	{
+		//Ensure that the game music is always playing if enabled
+		ServiceLocator::GetAudio()->PlayMusic();
+	}
+	else
+	{
+		//turn off the music
+		if (ServiceLocator::GetAudio()->IsSongPlaying())
+		{
+			ServiceLocator::GetAudio()->StopMusic();
+		}
+	}
 
 	//Determine what actions should take place based on state of game
 	switch (_gameState)
@@ -193,17 +209,86 @@ void Game::ShowMenu()
 {
 	MainMenu mainMenu;
 	MainMenu::MenuResult result = mainMenu.Show(_mainWindow);
+
 	switch (result)
 	{
-	case MainMenu::Exit:
-		_gameState = Game::Exiting;
-		break;
 	case MainMenu::Play:
 		_gameState = Game::Playing;
-
 		//Start all the objects moving!
 		_gameObjectManager.SetPause(false);
 		break;
+		//handles selected options from the menu
+	case MainMenu::OptGun:
+		_gunFire = !_gunFire;
+		break;
+	case MainMenu::OptMusic:
+		_music = !_music;
+		break;
+	case MainMenu::OptSound:
+		ServiceLocator::GetAudio()->MuteSounds(!ServiceLocator::GetAudio()->IsSoundMuted());
+		break;
+	case MainMenu::OptDifPansy:
+		_difficulty = Pansy;
+		UpdateImages();
+		break;
+	case MainMenu::OptDifWannabe:
+		_difficulty = Wannabe;
+		UpdateImages();
+		break;
+	case MainMenu::OptDifHard:
+		_difficulty = Hardcore;
+		UpdateImages();
+		break;
+	case MainMenu::OptConstMotion:
+		_constantMotion = !_constantMotion;
+		break;
+	case MainMenu::Exit:
+		_gameState = Game::Exiting;
+		break;
+	default:
+		//Clicked on a part of the screen that does nothing - do nothing!
+		break;
+	}
+}
+
+void Game::UpdateImages()
+{
+	//Load smaller paddles and smaller lasers for the player for hardcore gaming
+	Paddle* paddle[Game::NUM_PADDLES];
+	paddle[0] = dynamic_cast<Paddle*>(GetGameObjectManager().Get("Paddle1"));
+	paddle[1] = dynamic_cast<Paddle*>(GetGameObjectManager().Get("Paddle2"));
+
+	for (int i = 0; i < Game::NUM_PADDLES; i++)
+	{
+		if (NULL != paddle[i])
+		{
+			if (_difficulty == Hardcore)
+			{
+				//Smaller is harder for player, and makes the computer more accurate
+				paddle[i]->Load("images/paddleSmall.png");
+			}
+			else
+			{
+				paddle[i]->Load("images/paddle.png");
+			}
+		}
+	}
+
+	Laser* laser[3];
+	//Player users lasers 3, 4, and 5
+	laser[0] = dynamic_cast<Laser*>(GetGameObjectManager().Get("Laser3"));
+	laser[1] = dynamic_cast<Laser*>(GetGameObjectManager().Get("Laser4"));
+	laser[2] = dynamic_cast<Laser*>(GetGameObjectManager().Get("Laser5"));
+	for (int i = 0; i < 3; i++)
+	{
+		if (_difficulty == Hardcore)
+		{
+			laser[i]->Load("images/LaserSmall.png");
+		}
+		else
+		{
+			laser[i]->Load("images/Laser.png");
+		}
 	}
 }
 

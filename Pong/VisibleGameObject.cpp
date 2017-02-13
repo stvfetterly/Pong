@@ -25,7 +25,7 @@ void VisibleGameObject::Load(const std::string& filename)
 	else //Loads the image
 	{
 		_filename = filename;
-		_sprite.setTexture(_image);
+		_sprite.setTexture(_image, true);
 		_isLoaded = true;
 	}
 }

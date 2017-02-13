@@ -5,7 +5,7 @@
 #include "GameBall.h"
 #include "Laser.h"
 
-const float Paddle::AUTO_FIRE_RATE = 0.6;
+const float Paddle::AUTO_FIRE_RATE = 0.6f;
 
 Paddle::Paddle(Paddle::PaddleType type) : _velocity(0), _maxVelocity(600.0), _type(type), 
 										  _stun(0.0), laserFired(0), _autoFire(AUTO_FIRE_RATE)
@@ -50,7 +50,15 @@ void Paddle::Update(const float& elapsedTime)
 			_autoFire -= elapsedTime;
 			if (_autoFire < 0)
 			{
-				_autoFire = AUTO_FIRE_RATE;
+				if (Game::_difficulty == Game::Pansy)
+				{
+					_autoFire = AUTO_FIRE_RATE*2;
+				}
+				else
+				{
+					_autoFire = AUTO_FIRE_RATE;
+				}
+				
 				FireLaser();
 			}
 
@@ -71,8 +79,20 @@ void Paddle::UpdateAuto(const float& elapsedTime)
 	{
 		sf::Vector2f ballPosition = gameBall->GetPosition();
 
+		float paddleTolerance = 0.0;
+		if (Game::_difficulty == Game::Pansy)
+		{
+			//Bigger overshoot makes scoring easier
+			paddleTolerance = this->GetWidth() / 2;
+		}
+		else
+		{
+			//Standard overshoot
+			paddleTolerance = this->GetWidth() / 4;
+		}
+
 		//ignore ball position if it's going to hit the paddle
-		if (std::abs(GetPosition().x - ballPosition.x) > (this->GetWidth() / 4))
+		if (std::abs(GetPosition().x - ballPosition.x) > paddleTolerance)
 		{
 			//if the ball is further right than the paddle, move towards it
 			if (GetPosition().x < ballPosition.x)
@@ -130,102 +150,104 @@ void Paddle::UpdateAuto(const float& elapsedTime)
 
 void Paddle::UpdateManual(const float& elapsedTime)
 {
-	//Constant motion code
+	//Constant motion code (Paddle keeps moving with it's own velocity)
 
-	//Left makes the paddle move left
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+	if (Game::_constantMotion)
 	{
-		_velocity -= 3.0;
+		//Left makes the paddle move left
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+		{
+			_velocity -= 3.0;
+		}
+
+		//Right makes the paddle move right
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+		{
+			_velocity += 3.0;
+		}
+
+		//Down makes the paddle stop moving
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+		{
+			_velocity = 0.0;
+		}
+
+		//Ensure that paddle speed stays within speed limits
+		if (_velocity > _maxVelocity)
+		{
+			_velocity = _maxVelocity;
+		}
+		else if (_velocity < -_maxVelocity)
+		{
+			_velocity = -_maxVelocity;
+		}
+
+		sf::Vector2f pos = this->GetPosition();
+
+		//Paddle will bounce off the wall if it gets to the left side
+		float leftBound = (GetSprite().getLocalBounds().width / 2);
+		float rightBound = (Game::SCREEN_WIDTH - GetSprite().getLocalBounds().width / 2);
+
+		if (pos.x < leftBound)
+		{
+			this->SetPosition(leftBound, pos.y);
+			_velocity = -_velocity;
+
+			//Play associated sound
+			ServiceLocator::GetAudio()->PlaySound("sounds/Bounce2.wav");
+		}
+		//Paddle will bounce off the right side wall too
+		else if (pos.x > rightBound)
+		{
+			this->SetPosition(rightBound, pos.y);
+			_velocity = -_velocity;
+
+			//Play associated sound
+			ServiceLocator::GetAudio()->PlaySound("sounds/Bounce2.wav");
+		}
+		else
+		{
+			//Move the location of the paddle
+			GetSprite().move(_velocity * elapsedTime, 0);
+		}
 	}
-
-	//Right makes the paddle move right
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+	else
 	{
-		_velocity += 3.0;
-	}
-
-	//Down makes the paddle stop moving
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-	{
+		//Moves only when user presses keys
+		float move = 0.0;
 		_velocity = 0.0;
+
+		//Left makes the paddle move left
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+		{
+			move -= 1000.0 * elapsedTime;
+			_velocity = -_maxVelocity;		//Used to calculate 'English'
+		}
+
+		//Right makes the paddle move right
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+		{
+			move += 1000.0 * elapsedTime;
+			_velocity = _maxVelocity;		//Used to calculate 'English'
+		}
+
+		sf::Vector2f pos = this->GetPosition();
+
+		//Do not move further than the left wall
+		if (pos.x + move < (GetSprite().getLocalBounds().width / 2))
+		{
+			this->SetPosition((GetSprite().getLocalBounds().width / 2), pos.y);
+		}
+		//Do not move further than the right wall
+		else if (pos.x + move >(Game::SCREEN_WIDTH - GetSprite().getLocalBounds().width / 2))
+		{
+			this->SetPosition(Game::SCREEN_WIDTH - GetSprite().getLocalBounds().width / 2, pos.y);
+		}
+		else
+		{
+			this->SetPosition(pos.x + move, pos.y);
+		}
 	}
-
-	//Ensure that paddle speed stays within speed limits
-	if (_velocity > _maxVelocity)
-	{
-		_velocity = _maxVelocity;
-	}
-	else if (_velocity < -_maxVelocity)
-	{
-		_velocity = -_maxVelocity;
-	}
-
-	sf::Vector2f pos = this->GetPosition();
-
-	//Paddle will bounce off the wall if it gets to the left side
-	float leftBound = (GetSprite().getLocalBounds().width / 2);
-	float rightBound = (Game::SCREEN_WIDTH - GetSprite().getLocalBounds().width / 2);
-
-	if (pos.x < leftBound)
-	{
-		this->SetPosition(leftBound, pos.y);
-		_velocity = -_velocity;
-
-		//Play associated sound
-		ServiceLocator::GetAudio()->PlaySound("sounds/Bounce2.wav");
-	}
-	//Paddle will bounce off the right side wall too
-	else if (pos.x > rightBound)
-	{
-		this->SetPosition(rightBound, pos.y);
-		_velocity = -_velocity;
-
-		//Play associated sound
-		ServiceLocator::GetAudio()->PlaySound("sounds/Bounce2.wav");
-	}
-	else
-	{
-		//Move the location of the paddle
-		GetSprite().move(_velocity * elapsedTime, 0);
-	}
-
-
-
-
-/*
-	//Moves only when user presses keys
-	float move = 0.0;
-
-	//Left makes the paddle move left
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-	{
-		move -= 1000.0 * elapsedTime;
-	}
-
-	//Right makes the paddle move right
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-	{
-		move += 1000.0 * elapsedTime;
-	}
-
-	sf::Vector2f pos = this->GetPosition();
-
-	//Do not move further than the left wall
-	if (pos.x + move < (GetSprite().getLocalBounds().width / 2))
-	{
-		this->SetPosition((GetSprite().getLocalBounds().width / 2), pos.y);
-	}
-	//Do not move further than the right wall
-	else if (pos.x + move >(Game::SCREEN_WIDTH - GetSprite().getLocalBounds().width / 2))
-	{
-		this->SetPosition(Game::SCREEN_WIDTH - GetSprite().getLocalBounds().width / 2, pos.y);
-	}
-	else
-	{
-		this->SetPosition(pos.x + move, pos.y);
-	}
-*/
-
 }
 
 void Paddle::Stun()
@@ -254,68 +276,72 @@ int Paddle::GetLaserToFire()
 
 void Paddle::FireLaser()
 {
-	Laser* firingLaser;
-
-	//Find next free laser to shoot
-	if (GetType() == Paddle::Auto)
+	//Only fire the laser if it's enabled
+	if (Game::_gunFire)
 	{
-		switch (GetLaserToFire())
+		Laser* firingLaser;
+
+		//Find next free laser to shoot
+		if (GetType() == Paddle::Auto)
 		{
-		case 0:
-			firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser"));
-			break;
-		case 1:
-			firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser1"));
-			break;
-		case 2:
-			firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser2"));
-			break;
+			switch (GetLaserToFire())
+			{
+			case 0:
+				firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser"));
+				break;
+			case 1:
+				firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser1"));
+				break;
+			case 2:
+				firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser2"));
+				break;
+			}
 		}
-	}
-	else  //Manual firing laser
-	{
-		switch (GetLaserToFire())
+		else  //Manual firing laser
 		{
-		case 0:
-			firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser3"));
-			break;
-		case 1:
-			firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser4"));
-			break;
-		case 2:
-			firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser5"));
-			break;
+			switch (GetLaserToFire())
+			{
+			case 0:
+				firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser3"));
+				break;
+			case 1:
+				firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser4"));
+				break;
+			case 2:
+				firingLaser = dynamic_cast<Laser*>(Game::GetGameObjectManager().Get("Laser5"));
+				break;
+			}
 		}
-	}
 
 
-	if (firingLaser != NULL)
-	{
-		//Get center of the paddle as x location
-		float xPos = GetPosition().x;
-		float yPos = GetPosition().y;
-
-		//Get either the top or bottom of the paddle as y location
-		if (yPos == Paddle::TOP_Y_POS)
+		if (firingLaser != NULL)
 		{
-			//Get Top
-			yPos = yPos + firingLaser->GetHeight();
-			firingLaser->SetVelocity( abs( firingLaser->GetVelocity() ) );		//laser must go down, so velocity must be negative
+			//Get center of the paddle as x location
+			float xPos = GetPosition().x;
+			float yPos = GetPosition().y;
+
+			//Get either the top or bottom of the paddle as y location
+			if (yPos == Paddle::TOP_Y_POS)
+			{
+				//Get Top
+				yPos = yPos + firingLaser->GetHeight();
+				firingLaser->SetVelocity(abs(firingLaser->GetVelocity()));		//laser must go down, so velocity must be negative
+			}
+			else
+			{
+				//Get Bottom
+				yPos = yPos - firingLaser->GetHeight();
+				firingLaser->SetVelocity(-abs(firingLaser->GetVelocity()));		//laser must go up, so velocity must be positive
+			}
+
+			firingLaser->SetPosition(xPos, yPos);
+
+			//Laser sound
+			ServiceLocator::GetAudio()->PlaySound("sounds/LaserBlast.wav");
 		}
 		else
 		{
-			//Get Bottom
-			yPos = yPos - firingLaser->GetHeight();
-			firingLaser->SetVelocity( -abs( firingLaser->GetVelocity() ) );		//laser must go up, so velocity must be positive
+			//TODO - Error handling, laser not found!
 		}
-
-		firingLaser->SetPosition(xPos, yPos);
-
-		//Laser sound
-		ServiceLocator::GetAudio()->PlaySound("sounds/LaserBlast.wav");
-	}
-	else
-	{
-		//TODO - Error handling, laser not found!
 	}
 }

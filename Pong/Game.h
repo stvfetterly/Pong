@@ -6,6 +6,8 @@ class Game
 {
 
 public:
+	enum GameDifficulty {Pansy, Wannabe, Hardcore};
+	
 	static void Start();
 	static sf::RenderWindow& GetWindow();
 	const static sf::Event GetInput();
@@ -16,14 +18,18 @@ public:
 	const static int MAX_DEGREES = 360;
 	const static int NUM_PADDLES = 2;
 
+	//Game options
+	static bool _gunFire;
+	static bool _music;
+	static GameDifficulty _difficulty;
+	static bool _constantMotion;
+
 private:
 	static bool IsExiting();
 	static void GameLoop();
 
 	static void ShowSplashScreen();
 	static void ShowMenu();
-
-	static void FireLaser();
 
 	enum GameState 
 	{
@@ -38,4 +44,6 @@ private:
 	static GameState _gameState;
 	static sf::RenderWindow _mainWindow;
 	static GameObjectManager _gameObjectManager;
+
+	static void UpdateImages();
 };
